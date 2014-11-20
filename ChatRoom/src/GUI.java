@@ -1,11 +1,14 @@
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.IOException;
+import java.net.UnknownHostException;
 
 import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -16,23 +19,27 @@ import javax.swing.JTextArea;
 public class GUI{
 	private JFrame frame;
 	private JPanel startPanel;
+	private JTextField nameTextfield;
 	private JPanel workingPanel;
 	private JTextArea textArea;
 	private JTextField textField;
+	private String username;
+	private Server server;
+	private Client client;
+	private String status = "none";
 	public GUI(){
-		
 		setFrame();
-		setStartPanel();
 		setWorkingPanel();
+		setStartPanel();
+		frame.setVisible(true);
 	}
 
 	private void setFrame() {
 		frame = new JFrame("ChatRoom");
 		frame.setSize(400, 300);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setResizable(false);
 		frame.setLocation(100, 50);
-		frame.setVisible(true);
+		
 	}
 
 	private void setWorkingPanel() {
@@ -57,7 +64,12 @@ public class GUI{
 			@Override
 			public void keyReleased(KeyEvent e) {
 				if(e.getKeyCode() == KeyEvent.VK_ENTER){
-					System.out.println(textField.getText());
+					textArea.append(username+": "+textField.getText()+"\n");
+					if(status.equals("server")){
+						server.sentMessage();
+					}else if(status.equals("client")){
+						client.sentMessage();
+					}
 					textField.setText("");
 				}
 			}
@@ -66,34 +78,77 @@ public class GUI{
 		//set scroll for text area and determine where are the components
 		workingPanel.add(new JScrollPane(textArea),BorderLayout.CENTER);
 		workingPanel.add(textField,BorderLayout.PAGE_END);
-		
-		frame.add(workingPanel);		
 	}
 
 	private void setStartPanel() {
-		startPanel = new JPanel();
 		JButton btnServer = new JButton("Server");
 		JButton btnClient = new JButton("Client");
-		startPanel.setLayout(new FlowLayout());
 		
 		//set action listener for button
 		btnServer.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("server button");
-				startPanel.setVisible(false);
+				username = "Admin";
+				System.out.println("server:"+username);
+				frame.setTitle("ChatRoom-"+username);
+				frame.add(workingPanel);
+				frame.remove(startPanel);
+				frame.setVisible(true);
+				
+				try {
+					openServer();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+				
 			}
 		});
 		btnClient.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("client button");
-				startPanel.setVisible(false);
+				if(nameTextfield.getText().equals("")){
+					JOptionPane.showMessageDialog(startPanel, "ID cannot be empty for client!");
+				}else{
+					username = nameTextfield.getText();
+					System.out.println("client:" + username);
+					frame.setTitle("ChatRoom-"+username);
+					frame.add(workingPanel);
+					frame.remove(startPanel);
+					frame.setVisible(true);
+					
+					try {
+						openClient(username);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}	
+					
+				}
+				
 			}
 		});
+		
+		//id-input tools
+		JLabel idLabel = new JLabel("   ID:   ");		
+		nameTextfield = new JTextField(28);
+		
+		//add to start panel
+		startPanel = new JPanel();	
+		startPanel.add(idLabel);
+		startPanel.add(nameTextfield);
 		startPanel.add(btnServer);
-		startPanel.add(btnClient);
+		startPanel.add(btnClient);		
 		startPanel.setVisible(true);
+		
 		frame.add(startPanel);
+	}
+	
+	private void openServer() throws IOException{
+		status = "server";
+		server = new Server(textArea,textField);
+	}
+	
+	private void openClient(String username) throws UnknownHostException, IOException{
+		status = "client";
+		client = new Client(username,"127.0.0.1",textArea,textField);
 	}
 }

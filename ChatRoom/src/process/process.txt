@@ -1,0 +1,10 @@
+1. GUI架設 >> 2014/11/18...OK
+2. socket測試連線 >> 2014/11/18...OK
+3. 直接放入GUI >> 2014/11/18...error
+4. 不寫成class直接用main String 測試連線 >> 2014/11/19...OK
+5. IOStream連接測試,使用測試 >> 2014/11/19...OK
+6. listenerThread持續監聽訊息 >> 2014/11/19...OK
+7. client端不正常斷線重連測試 >> 2014/11/20...OK
+8. server斷線自動回到等待連線 >> 2014/11/20...error
+9. GUI中的server測試 ,能清除clientList中已close的IOGroup >> 2014/11/20...OK
+10. 全盤簡易測試成功,尚未能同步textArea >> 2014/11/20...not yet
