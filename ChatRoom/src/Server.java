@@ -9,58 +9,62 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 public class Server {
-	private ServerSocket server;
+	private ServerSocket serverSocket;
 	private LinkedList<IOGroup> clientList;
-	private JTextField textField;
-	public Server(JTextArea textArea, JTextField textField) throws IOException {
-		this.textField = textField;
+
+	public Server(String port, JTextArea textArea, JTextField textField) throws IOException {
 		clientList = new LinkedList<IOGroup>();
-		server = new ServerSocket(4567, 3);
-		
-		Thread getClient = new Thread(new ClientThread(server,clientList,textArea));
+		serverSocket = new ServerSocket(Integer.parseInt(port), 8);
+
+		Thread getClient = new Thread(new ClientThread(this, serverSocket,
+				clientList, textArea));
 		getClient.start();
 	}
 
-	public void sentMessage(){
-		String message = textField.getText();
-		for(int i = 0;i<clientList.size();i++){
+	public void sentMessage(String message) {
+		for (int i = 0; i < clientList.size(); i++) {
 			try {
 				clientList.get(i).output.writeUTF(message);
 				clientList.get(i).output.flush();
 			} catch (IOException e) {
 				e.printStackTrace();
-			}		
+			}
 		}
 	}
+
 	public void close() throws IOException {
-		server.close();
+		serverSocket.close();
 	}
 
 }
 
-class ClientThread implements Runnable{
-	private ServerSocket server;
+class ClientThread implements Runnable {
+	private Server server;
+	private ServerSocket serverSocket;
 	private LinkedList<IOGroup> clientList;
 	private JTextArea textArea;
-	public ClientThread(ServerSocket server, LinkedList<IOGroup> clientList, JTextArea textArea){
+
+	public ClientThread(Server server, ServerSocket serverSocket,
+			LinkedList<IOGroup> clientList, JTextArea textArea) {
 		this.server = server;
+		this.serverSocket = serverSocket;
 		this.clientList = clientList;
 		this.textArea = textArea;
 	}
 
 	@Override
 	public void run() {
-		while(true){
+		while (true) {
 			System.out.println("wait for connection...");
 			Socket client;
 			try {
-				client = server.accept();
+				client = serverSocket.accept();
 			} catch (IOException e) {
 				System.out.println("get client...error");
 				continue;
 			}
 			System.out.println("get client...OK");
-			
+
 			System.out.println("Wait for IO Stream Connection...");
 			ObjectOutputStream output;
 			ObjectInputStream input;
@@ -73,8 +77,8 @@ class ClientThread implements Runnable{
 				continue;
 			}
 			System.out.println("get IOStream...OK");
-			
-			//manage by IO Group
+
+			// manage by IO Group
 			IOGroup currentGroup = new IOGroup(client, output, input);
 			clientList.add(currentGroup);
 			
@@ -84,10 +88,14 @@ class ClientThread implements Runnable{
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			Listener listener = new Listener(clientList,currentGroup,textArea,clientID);
+			textArea.append(clientID+" got in the room\n");
+			server.sentMessage(clientID+" got in the room");
+			
+			Listener listener = new Listener(server, clientList, currentGroup,
+					textArea, clientID);
 			Thread listenerThread = new Thread(listener);
 			listenerThread.start();
-			
+
 		}
 	}
 }

@@ -11,12 +11,10 @@ public class Client {
 	private Socket server;
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
-	private JTextField textField;
 
-	public Client(String username, String url, JTextArea textArea,
+	public Client(String username, String ip, String port, JTextArea textArea,
 			JTextField textField) throws UnknownHostException, IOException {
-		this.textField = textField;
-		server = new Socket(url, 4567);
+		server = new Socket(ip, Integer.parseInt(port));
 		textArea.append("connect to server...OK\n");
 
 		output = new ObjectOutputStream(server.getOutputStream());
@@ -25,7 +23,7 @@ public class Client {
 
 		output.writeUTF(username);
 		output.flush();
-		
+
 		ClientListener listener = new ClientListener(server, input, output,
 				textArea);
 		Thread listenerThread = new Thread(listener);
@@ -38,8 +36,7 @@ public class Client {
 		input.close();
 	}
 
-	public void sentMessage() {
-		String message = textField.getText();
+	public void sentMessage(String message) {
 		try {
 			output.writeUTF(message);
 			output.flush();
@@ -71,7 +68,7 @@ class ClientListener implements Runnable {
 			try {
 				textArea.append(input.readUTF() + "\n");
 			} catch (IOException e) {
-				textArea.append("! IO Stream Disconnected !\n");
+				textArea.append("! Server Closed !\n");
 				try {
 					server.close();
 					input.close();

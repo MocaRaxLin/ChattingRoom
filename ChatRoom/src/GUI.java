@@ -4,6 +4,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import javax.swing.JButton;
@@ -15,8 +16,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-
-public class GUI{
+public class GUI {
 	private JFrame frame;
 	private JPanel startPanel;
 	private JTextField nameTextfield;
@@ -27,7 +27,16 @@ public class GUI{
 	private Server server;
 	private Client client;
 	private String status = "none";
-	public GUI(){
+	private JTextField ipTextfield;
+	private JTextField portTextfield;
+	private String ip;
+	private String port;
+
+	public static void main(String[] args) {
+		new GUI();
+	}
+
+	public GUI() {
 		setFrame();
 		setWorkingPanel();
 		setStartPanel();
@@ -36,119 +45,164 @@ public class GUI{
 
 	private void setFrame() {
 		frame = new JFrame("ChatRoom");
-		frame.setSize(400, 300);
+		frame.setSize(720, 320);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setLocation(100, 50);
-		
+		frame.setLocation(200, 100);
 	}
 
 	private void setWorkingPanel() {
-		//set layout for the working panel
+		// set layout for the working panel
 		workingPanel = new JPanel(new BorderLayout());
-		
-		//textArea is an object to show message we type
+
+		// textArea is an object to show message we type
 		textArea = new JTextArea();
 		textArea.setLineWrap(true);
 		textArea.setWrapStyleWord(true);
 		textArea.setEditable(false);
-		
-		//textField is a blank where we input the message
+
+		// textField is a blank where we input the message
 		textField = new JTextField();
 		textField.addKeyListener(new KeyListener() {
-			
-			//unused functions
-			public void keyTyped(KeyEvent e) {}
-			public void keyPressed(KeyEvent e) {}
-			
-			//the message-input function
+
+			// unused functions
+			public void keyTyped(KeyEvent e) {
+			}
+
+			public void keyPressed(KeyEvent e) {
+			}
+
+			// the message-input function
 			@Override
 			public void keyReleased(KeyEvent e) {
-				if(e.getKeyCode() == KeyEvent.VK_ENTER){
-					textArea.append(username+": "+textField.getText()+"\n");
-					if(status.equals("server")){
-						server.sentMessage();
-					}else if(status.equals("client")){
-						client.sentMessage();
+				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+					String message = textField.getText();
+					if (status.equals("server")) {
+						textArea.append("Admin: " +message + "\n");
+						server.sentMessage("Admin: " + message);
+					} else if (status.equals("client")) {
+						client.sentMessage(message);
 					}
 					textField.setText("");
 				}
 			}
 		});
-		
-		//set scroll for text area and determine where are the components
-		workingPanel.add(new JScrollPane(textArea),BorderLayout.CENTER);
-		workingPanel.add(textField,BorderLayout.PAGE_END);
+
+		// set scroll for text area and determine where are the components
+		workingPanel.add(new JScrollPane(textArea), BorderLayout.CENTER);
+		workingPanel.add(textField, BorderLayout.PAGE_END);
 	}
 
 	private void setStartPanel() {
 		JButton btnServer = new JButton("Server");
 		JButton btnClient = new JButton("Client");
-		
-		//set action listener for button
+
+		// set action listener for button
 		btnServer.addActionListener(new ActionListener() {
+			private String localIP;
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				username = "Admin";
-				System.out.println("server:"+username);
-				frame.setTitle("ChatRoom-"+username);
+				try {
+					localIP = InetAddress.getLocalHost().getHostAddress();
+				} catch (UnknownHostException e2) {
+					JOptionPane.showMessageDialog(startPanel,"Cannot get local IP!");
+				}
+				port = portTextfield.getText();
+				int intport = Integer.parseInt(port);
+				if (intport < 1024 || 65535 < intport) {
+					JOptionPane.showMessageDialog(startPanel,
+							"Port should be in the range 1024~65535!");
+				}
+				frame.setTitle("ChatRoom- " + username + " on ip: " + localIP
+						+ " on port: " + port);
 				frame.add(workingPanel);
 				frame.remove(startPanel);
 				frame.setVisible(true);
-				
+
 				try {
-					openServer();
+					openServer(port);
 				} catch (IOException e1) {
-					e1.printStackTrace();
+					JOptionPane.showMessageDialog(startPanel,
+							"Server-opening Error!");
 				}
-				
+
 			}
 		});
 		btnClient.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if(nameTextfield.getText().equals("")){
-					JOptionPane.showMessageDialog(startPanel, "ID cannot be empty for client!");
-				}else{
+				if (nameTextfield.getText().equals("")) {
+					JOptionPane.showMessageDialog(startPanel,
+							"ID cannot be empty for client!");
+				} else if (ipTextfield.getText().equals("")) {
+					JOptionPane.showMessageDialog(startPanel,
+							"IP cannot be empty for client!");
+				} else if (portTextfield.getText().equals("")) {
+					JOptionPane.showMessageDialog(startPanel,
+							"Port cannot be empty for client!");
+					int intport = Integer.parseInt(port);
+					if (intport < 1024 || 65535 < intport) {
+						JOptionPane.showMessageDialog(startPanel,
+								"Port should be in the range 1024~65535!");
+					}
+				} else {
 					username = nameTextfield.getText();
-					System.out.println("client:" + username);
-					frame.setTitle("ChatRoom-"+username);
+					ip = ipTextfield.getText();
+					port = portTextfield.getText();
+
+					frame.setTitle("ChatRoom-" + username + " on ip:" + ip
+							+ " on port:" + port);
 					frame.add(workingPanel);
 					frame.remove(startPanel);
 					frame.setVisible(true);
-					
+
 					try {
-						openClient(username);
+						openClient(username, ip, port);
 					} catch (IOException e1) {
-						e1.printStackTrace();
-					}	
-					
+						JOptionPane.showMessageDialog(startPanel,
+								"Client-opening Error!");
+					}
+
 				}
-				
+
 			}
 		});
-		
-		//id-input tools
-		JLabel idLabel = new JLabel("   ID:   ");		
+
+		// id-input tools
+		JLabel idLabel = new JLabel("ID :");
 		nameTextfield = new JTextField(28);
-		
-		//add to start panel
-		startPanel = new JPanel();	
+
+		// Ip & port
+		JLabel ipLabel = new JLabel("IP :");
+		ipTextfield = new JTextField(17);
+		JLabel portLabel = new JLabel("Port :");
+		portTextfield = new JTextField(6);
+
+		// add to start panel
+		startPanel = new JPanel();
 		startPanel.add(idLabel);
 		startPanel.add(nameTextfield);
+		startPanel.add(ipLabel);
+		startPanel.add(ipTextfield);
+		startPanel.add(portLabel);
+		startPanel.add(portTextfield);
 		startPanel.add(btnServer);
-		startPanel.add(btnClient);		
+		startPanel.add(btnClient);
 		startPanel.setVisible(true);
-		
+
 		frame.add(startPanel);
 	}
-	
-	private void openServer() throws IOException{
+
+	private void openServer(String port) throws IOException {
 		status = "server";
-		server = new Server(textArea,textField);
+		server = new Server(port, textArea, textField);
 	}
-	
-	private void openClient(String username) throws UnknownHostException, IOException{
+
+	private void openClient(String username, String ip, String port)
+			throws UnknownHostException, IOException {
 		status = "client";
-		client = new Client(username,"127.0.0.1",textArea,textField);
+		client = new Client(username, ip, port, textArea, textField);
 	}
+
 }

@@ -7,4 +7,7 @@
 7. client端不正常斷線重連測試 >> 2014/11/20...OK
 8. server斷線自動回到等待連線 >> 2014/11/20...error
 9. GUI中的server測試 ,能清除clientList中已close的IOGroup >> 2014/11/20...OK
-10. 全盤簡易測試成功,尚未能同步textArea >> 2014/11/20...not yet
+10. 全盤簡易測試成功,能同步textArea >> 2014/11/20...OK
+11. 決定連線的IP以及Port >> 2014/11/22...OK
+12. 開啟server只讀取port 開啟client讀id ip port >> 2014/11/22...OK
+13. 尚未能防呆 >> 2014/11/22...not yet
