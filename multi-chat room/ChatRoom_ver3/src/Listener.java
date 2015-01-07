@@ -12,6 +12,7 @@ public class Listener implements Runnable {
 	private JTextArea textArea;
 	private String clientID;
 
+	//keep getting message and detect lost connection of client
 	public Listener(Server server, LinkedList<IOGroup> clientList,
 			IOGroup group, JTextArea textArea, String clientID) {
 		this.server = server;

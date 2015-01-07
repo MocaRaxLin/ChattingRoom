@@ -18,8 +18,10 @@ import javax.swing.JTextArea;
 
 public class GUI {
 	private JFrame frame;
+
 	private JPanel startPanel;
 	private JTextField nameTextfield;
+
 	private JPanel workingPanel;
 	private JTextArea textArea;
 	private JTextField textField;
@@ -31,7 +33,7 @@ public class GUI {
 	private JTextField portTextfield;
 	private String ip;
 	private String port;
-
+	
 	public static void main(String[] args) {
 		new GUI();
 	}
@@ -43,14 +45,14 @@ public class GUI {
 		frame.setVisible(true);
 	}
 
-	private void setFrame() {
+	private void setFrame() {	//to place StartPanel and WorkingPanel
 		frame = new JFrame("ChatRoom");
 		frame.setSize(720, 320);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLocation(200, 100);
 	}
 
-	private void setWorkingPanel() {
+	private void setWorkingPanel() {	//panel of chat room 
 		// set layout for the working panel
 		workingPanel = new JPanel(new BorderLayout());
 
@@ -76,13 +78,22 @@ public class GUI {
 			public void keyReleased(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 					String message = textField.getText();
-					if (status.equals("server")) {
-						textArea.append("Admin: " +message + "\n");
-						server.sentMessage("Admin: " + message);
-					} else if (status.equals("client")) {
-						client.sentMessage(message);
+					if(!message.equals("")){ //sent message
+						if (status.equals("server")) {
+							textArea.append("Admin: " + message + "\n");
+							server.sentMessage("Admin: " + message);
+						} else if (status.equals("client")) {
+							if((!client.getStatus())&&message.equals("Reconnect")){
+								try {
+									openClient(username, ip, port);
+								} catch (IOException e1) {
+									JOptionPane.showMessageDialog(startPanel,
+											"connecting Error!");
+								}
+							}else	client.sentMessage(message);
+						}
+						textField.setText("");
 					}
-					textField.setText("");
 				}
 			}
 		});
@@ -97,7 +108,8 @@ public class GUI {
 		JButton btnClient = new JButton("Client");
 
 		// set action listener for button
-		btnServer.addActionListener(new ActionListener() {
+		//button to open server and have basic steps to prevent errors
+		btnServer.addActionListener(new ActionListener() {	
 			private String localIP;
 
 			@Override
@@ -106,29 +118,38 @@ public class GUI {
 				try {
 					localIP = InetAddress.getLocalHost().getHostAddress();
 				} catch (UnknownHostException e2) {
-					JOptionPane.showMessageDialog(startPanel,"Cannot get local IP!");
+					JOptionPane.showMessageDialog(startPanel,
+							"Cannot get local IP!");
 				}
 				port = portTextfield.getText();
-				int intport = Integer.parseInt(port);
-				if (intport < 1024 || 65535 < intport) {
-					JOptionPane.showMessageDialog(startPanel,
-							"Port should be in the range 1024~65535!");
-				}
-				frame.setTitle("ChatRoom- " + username + " on ip: " + localIP
-						+ " on port: " + port);
-				frame.add(workingPanel);
-				frame.remove(startPanel);
-				frame.setVisible(true);
+				int intport = 0;
+				try{
+					intport = Integer.parseInt(port);
+					if (intport < 1024 || 65535 < intport) {
+						JOptionPane.showMessageDialog(startPanel,
+								"Port should be in the range 1024~65535!");
+					} else {
+						frame.setTitle("ChatRoom- " + username + " on ip: "
+								+ localIP + " on port: " + port);
+						frame.add(workingPanel);
+						frame.remove(startPanel);
+						frame.setVisible(true);
 
-				try {
-					openServer(port);
-				} catch (IOException e1) {
-					JOptionPane.showMessageDialog(startPanel,
-							"Server-opening Error!");
-				}
-
+						try {
+							openServer(port);
+						} catch (IOException e1) {
+							JOptionPane.showMessageDialog(startPanel,
+									"Server-opening Error!");
+						}
+					}
+				}catch(NumberFormatException e3){  
+			    	JOptionPane.showMessageDialog(startPanel,
+							"Port should be in the range 1024~65535!");  
+			    }
 			}
 		});
+		
+		//button to open client and have basic steps to prevent errors
 		btnClient.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -141,29 +162,36 @@ public class GUI {
 				} else if (portTextfield.getText().equals("")) {
 					JOptionPane.showMessageDialog(startPanel,
 							"Port cannot be empty for client!");
-					int intport = Integer.parseInt(port);
-					if (intport < 1024 || 65535 < intport) {
-						JOptionPane.showMessageDialog(startPanel,
-								"Port should be in the range 1024~65535!");
-					}
 				} else {
+
 					username = nameTextfield.getText();
 					ip = ipTextfield.getText();
 					port = portTextfield.getText();
 
-					frame.setTitle("ChatRoom-" + username + " on ip:" + ip
-							+ " on port:" + port);
-					frame.add(workingPanel);
-					frame.remove(startPanel);
-					frame.setVisible(true);
-
-					try {
-						openClient(username, ip, port);
-					} catch (IOException e1) {
-						JOptionPane.showMessageDialog(startPanel,
-								"Client-opening Error!");
-					}
-
+					int intport = 0;
+					try{  
+						intport = Integer.parseInt(port); 
+						if (intport < 1024 || 65535 < intport||intport == 0) {
+							JOptionPane.showMessageDialog(startPanel,
+									"Port should be in the range 1024~65535!");
+						} else {
+							try {
+								openClient(username, ip, port);
+								frame.setTitle("ChatRoom-" + username + " on ip:" + ip
+										+ " on port:" + port);
+								frame.add(workingPanel);
+								frame.remove(startPanel);
+								frame.setVisible(true);
+							} catch (IOException e1) {
+								JOptionPane.showMessageDialog(startPanel,
+										"Client-opening Error!");
+							}
+						}
+				    } catch(NumberFormatException e3){  
+				    	JOptionPane.showMessageDialog(startPanel,
+								"Port should be in the range 1024~65535!");  
+				    }
+					
 				}
 
 			}
@@ -195,14 +223,16 @@ public class GUI {
 	}
 
 	private void openServer(String port) throws IOException {
-		status = "server";
+		status = "server";	//use in keyReleased function at working panel
 		server = new Server(port, textArea, textField);
+		//details are in "Server" class
 	}
 
 	private void openClient(String username, String ip, String port)
 			throws UnknownHostException, IOException {
-		status = "client";
+		status = "client";	//use in keyReleased function at working panel
 		client = new Client(username, ip, port, textArea, textField);
+		//details are in "Client" class
 	}
 
 }

@@ -12,6 +12,8 @@ public class Server {
 	private ServerSocket serverSocket;
 	private LinkedList<IOGroup> clientList;
 
+	//1. new client list, serverSocket, thread(ClientThread)
+	//2. setMessage(), close() functions
 	public Server(String port, JTextArea textArea, JTextField textField) throws IOException {
 		clientList = new LinkedList<IOGroup>();
 		serverSocket = new ServerSocket(Integer.parseInt(port), 8);
@@ -38,6 +40,11 @@ public class Server {
 
 }
 
+//accept client
+//new input/ output stream
+//give data to IOGroup
+//append message about new user
+//new thread(listener)
 class ClientThread implements Runnable {
 	private Server server;
 	private ServerSocket serverSocket;

@@ -8,6 +8,7 @@ public class IOGroup {
 	public ObjectOutputStream output;
 	public ObjectInputStream input;
 
+	//group of IO tools, close() function
 	public IOGroup(Socket socket, ObjectOutputStream output,
 			ObjectInputStream input) {
 		this.socket = socket;
